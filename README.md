@@ -41,8 +41,7 @@ chmod +x blood-harvest
 | `TELEGRAM_API_HASH` | ✅ | API Hash с my.telegram.org |
 | `SESSIONS` | ✅ | Имена сессий через запятую (напр. `MAIN,ALT`) |
 | `PHONE_<NAME>` | ✅ | Номер телефона для каждой сессии (напр. `PHONE_MAIN=+79001234567`) |
-| `DATABASE_URL` | ✅ | PostgreSQL URL (задачи, мут, слежка) |
-| `REDIS_URL` | ✅ | Redis URL (быстрый кэш состояний) |
+| `DATABASE_URL` | ✅ | Путь к SQLite файлу (напр. `sqlite://data/harvest.db`) |
 | `RECONNECT_BASE_SECS` | ❌ | Базовая задержка переподключения в сек (по умолч. `3`) |
 | `RECONNECT_MAX_SECS` | ❌ | Максимальная задержка переподключения в сек (по умолч. `60`) |
 | `HEALTHCHECK_SECS` | ❌ | Интервал проверки соединения в сек (по умолч. `30`) |
@@ -58,8 +57,7 @@ chmod +x blood-harvest
 
 - **OS**: Linux x86_64 (Ubuntu 20.04+, Debian 11+)
 - **glibc**: ≥ 2.31
-- **PostgreSQL**: 13+
-- **Redis**: 6+
+- **SQLite**: встроена в бинарник, ничего устанавливать не нужно
 
 ## Стек
 
@@ -67,14 +65,12 @@ chmod +x blood-harvest
 |---|---|---|
 | [grammers-client](https://github.com/Lonami/grammers) | 0.7.0 | Telegram MTProto клиент |
 | [tokio](https://tokio.rs) | 1 | Async runtime (multi-thread) |
-| [sqlx](https://github.com/launchbadge/sqlx) | 0.8 | PostgreSQL (async, rustls, migrate) |
-| [redis](https://github.com/redis-rs/redis-rs) | 0.32 | Redis клиент (tokio) |
+| [sqlx](https://github.com/launchbadge/sqlx) | 0.8 | SQLite (async, migrate) |
 | [reqwest](https://github.com/seanmonstar/reqwest) | 0.12 | HTTP-клиент (rustls, multipart) |
 | [anyhow](https://github.com/dtolnay/anyhow) | 1 | Обработка ошибок |
 | [dotenvy](https://github.com/allan2/dotenvy) | 0.15 | Загрузка `.env` |
 | [chrono](https://github.com/chronotope/chrono) | 0.4 | Дата/время + serde |
 | [serde](https://serde.rs) | 1 | Сериализация (derive) |
-| [uuid](https://github.com/uuid-rs/uuid) | 1 | UUID v4 для задач |
 | [rand](https://github.com/rust-random/rand) | 0.8 | Случайные числа |
 | [futures](https://github.com/rust-lang/futures-rs) | 0.3 | Async утилиты |
 | [tempfile](https://github.com/Stebalien/tempfile) | 3 | Временные файлы |
@@ -97,4 +93,3 @@ RestartSec=5
 [Install]
 WantedBy=multi-user.target
 ```
-
