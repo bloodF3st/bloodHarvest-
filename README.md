@@ -47,8 +47,6 @@ chmod +x blood-harvest
 | `HEALTHCHECK_SECS` | ❌ | Интервал проверки соединения в сек (по умолч. `30`) |
 | `HELP_HEADER` | ❌ | Заголовок для `.help` и стартового сообщения |
 | `SEND_STARTUP_HELP_HEADER` | ❌ | Отключить стартовое сообщение: `0` |
-| `FAKE_MACHINE_UPTIME_START` | ❌ | Стартовый аптайм машины для `.uptime` |
-| `FAKE_BOT_UPTIME_START` | ❌ | Стартовый аптайм бота для `.uptime` |
 | `USER_TEMPLATES_DIR` | ❌ | Папка с шаблонами `.txt` (по умолч. `data/user_templates`) |
 
 ## Зависимости рантайма
