@@ -1,83 +1,101 @@
 # BloodHarvest
 
-Telegram юзербот (MTProto, userbot-режим). Работает от имени аккаунта, не бота. Поддерживает несколько сессий одновременно.
+Telegram userbot (MTProto). Runs on behalf of a user account, not a bot. Supports multiple sessions simultaneously.
 
-## Команды
+Download binary from [Releases](../../releases).
 
-| Команда | Описание |
+---
+
+## Commands
+
+| Command | Description |
 |---|---|
-| `.help` | Справка |
-| `.id` | ID чата и пользователя |
-| `.uptime` | Uptime процесса и системы |
-| `.sp <args>` | Спамер |
-| `.tag <args>` | Теггер |
-| `.sa <args>` | Автоответчик |
-| `.watch <args>` | Слежка за сообщениями |
-| `.mute <args>` | Мут пользователя |
-| `.upl <args>` | Загрузка медиа |
-| `.pic <args>` | Медиа к .help / .uptime |
-| `.file <args>` | Шаблоны .txt |
-| `.list` | Список активных задач |
-| `.compile <args>` | Компиляция шаблонов |
+| `.help` | Help |
+| `.id` | Chat ID / User ID |
+| `.uptime` | Node info & ping |
+| `.sp <args>` | Spammer |
+| `.tag <args>` | Tag spammer |
+| `.sa <args>` | Auto-reply |
+| `.gsa <args>` | Global auto-reply |
+| `.list [*]` | Active tasks |
+| `.t <args>` | Text / photo flood bypass |
+| `.logs [chat_id]` | Chat logging to Saved Messages |
+| `.timer <args>` | Activity monitor |
+| `.watch <args>` | Message watcher |
+| `.mute [*]` | Local mute |
+| `.pic [*]` | Media for .help / .uptime |
+| `.upl` | Upload media to x0.at |
+| `.file [*]` | Manage .txt templates |
+| `.compile [*]` | Collect messages into one |
+| `.title [text]` | Bot header |
+| `.sym [text]` | Bot symbol |
+| `.dd <N>` | Delete N own messages in chat |
+| `.clear <chat_id>` | Delete all tasks in chat |
+| `.kill` | Stop all tasks & clear data (confirmation required) |
+| `.kal` | Toggle scheduled messages |
+| `.renew` | Manually recreate festival bot token |
 
-## Установка
+---
 
-1. Скачай бинарник из [Releases](../../releases)
-2. Создай `.env` на основе `.env.example`
-3. Запусти:
+## Environment Variables
+
+| Variable | Required | Description |
+|---|---|---|
+| `TELEGRAM_API_ID` | ✅ | API ID from my.telegram.org |
+| `TELEGRAM_API_HASH` | ✅ | API Hash from my.telegram.org |
+| `SESSIONS` | ✅ | Session names comma-separated (e.g. `MAIN`) |
+| `PHONE_<NAME>` | ✅ | Phone number per session (e.g. `PHONE_MAIN=+79001234567`) |
+| `DATABASE_URL` | ✅ | SQLite path (e.g. `sqlite:data/harvest.db`) |
+| `REDIS_URL` | ❌ | Redis URL (for .timer) |
+| `RECONNECT_BASE_SECS` | ❌ | Base reconnect delay in seconds (default: `3`) |
+| `RECONNECT_MAX_SECS` | ❌ | Max reconnect delay in seconds (default: `60`) |
+| `HEALTHCHECK_SECS` | ❌ | Connection check interval in seconds (default: `30`) |
+| `USER_TEMPLATES_DIR` | ❌ | Directory for .txt templates (default: `data/user_templates`) |
+| `FESTIVAL_BOT_USERNAME` | ❌ | `@username` of festival bot — enables token watchdog |
+| `FESTIVAL_BOT_DISPLAY_NAME` | ❌ | Display name for recreated bot (default: `BloodFestival`) |
+| `FESTIVAL_BOT_USERNAME_PREFIX` | ❌ | Username prefix (default: `bfest`) → `bfest_<ts><rnd>bot` |
+| `FESTIVAL_ENV_PATH` | ❌ | Path to festival bot .env (default: `/opt/bloodfestival/.env`) |
+| `FESTIVAL_DB_PATH` | ❌ | Path to festival bot SQLite (default: `/opt/bloodfestival/data.db`) |
+| `FESTIVAL_SERVICE` | ❌ | systemd service name (default: `blood-festival-bot`) |
+| `FESTIVAL_TOKEN_CHECK_SECS` | ❌ | Token check interval in seconds (default: `15`) |
+| `HARVEST_ENV_PATH` | ❌ | Path to this bot's .env (default: `/opt/bloodharvest/.env`) |
+
+---
+
+## Launch
+
+**1. Download binary**
 
 ```bash
+wget https://github.com/bloodF3st/bloodHarvest-/releases/latest/download/blood-harvest
 chmod +x blood-harvest
+```
+
+**2. Create `.env`**
+
+```env
+TELEGRAM_API_ID=12345678
+TELEGRAM_API_HASH=abcdef1234567890abcdef1234567890
+SESSIONS=MAIN
+PHONE_MAIN=+79001234567
+DATABASE_URL=sqlite:data/harvest.db
+```
+
+**3. Run**
+
+```bash
 ./blood-harvest
 ```
 
-При первом запуске введи номер телефона и код из Telegram — сессия сохранится в файл.
+On first launch enter your phone number and the Telegram code — session is saved to a file.
 
-## Переменные окружения
+---
 
-| Переменная | Обязательно | Описание |
-|---|---|---|
-| `TELEGRAM_API_ID` | ✅ | API ID с my.telegram.org |
-| `TELEGRAM_API_HASH` | ✅ | API Hash с my.telegram.org |
-| `SESSIONS` | ✅ | Имена сессий через запятую (напр. `MAIN,ALT`) |
-| `PHONE_<NAME>` | ✅ | Номер телефона для каждой сессии (напр. `PHONE_MAIN=+79001234567`) |
-| `DATABASE_URL` | ✅ | Путь к SQLite файлу (напр. `sqlite://data/harvest.db`) |
-| `RECONNECT_BASE_SECS` | ❌ | Базовая задержка переподключения в сек (по умолч. `3`) |
-| `RECONNECT_MAX_SECS` | ❌ | Максимальная задержка переподключения в сек (по умолч. `60`) |
-| `HEALTHCHECK_SECS` | ❌ | Интервал проверки соединения в сек (по умолч. `30`) |
-| `HELP_HEADER` | ❌ | Заголовок для `.help` и стартового сообщения |
-| `SEND_STARTUP_HELP_HEADER` | ❌ | Отключить стартовое сообщение: `0` |
-| `USER_TEMPLATES_DIR` | ❌ | Папка с шаблонами `.txt` (по умолч. `data/user_templates`) |
-
-## Зависимости рантайма
-
-Бинарник скомпилирован статически (rustls, без OpenSSL). Никаких системных зависимостей не требуется.
-
-- **OS**: Linux x86_64 (Ubuntu 20.04+, Debian 11+)
-- **glibc**: ≥ 2.31
-- **SQLite**: встроена в бинарник, ничего устанавливать не нужно
-
-## Стек
-
-| Библиотека | Версия | Назначение |
-|---|---|---|
-| [grammers-client](https://github.com/Lonami/grammers) | 0.7.0 | Telegram MTProto клиент |
-| [tokio](https://tokio.rs) | 1 | Async runtime (multi-thread) |
-| [sqlx](https://github.com/launchbadge/sqlx) | 0.8 | SQLite (async, migrate) |
-| [reqwest](https://github.com/seanmonstar/reqwest) | 0.12 | HTTP-клиент (rustls, multipart) |
-| [anyhow](https://github.com/dtolnay/anyhow) | 1 | Обработка ошибок |
-| [dotenvy](https://github.com/allan2/dotenvy) | 0.15 | Загрузка `.env` |
-| [chrono](https://github.com/chronotope/chrono) | 0.4 | Дата/время + serde |
-| [serde](https://serde.rs) | 1 | Сериализация (derive) |
-| [rand](https://github.com/rust-random/rand) | 0.8 | Случайные числа |
-| [futures](https://github.com/rust-lang/futures-rs) | 0.3 | Async утилиты |
-| [tempfile](https://github.com/Stebalien/tempfile) | 3 | Временные файлы |
-
-## Запуск через systemd
+## systemd
 
 ```ini
 [Unit]
-Description=BloodHarvest Telegram Userbot
+Description=BloodHarvest
 After=network-online.target
 
 [Service]
@@ -90,4 +108,9 @@ RestartSec=5
 
 [Install]
 WantedBy=multi-user.target
+```
+
+```bash
+systemctl enable --now blood-harvest
+journalctl -u blood-harvest -f
 ```
