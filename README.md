@@ -19,9 +19,8 @@ Download binary from [Releases](../../releases).
 | `.gsa <args>` | Global auto-reply |
 | `.list [*]` | Active tasks |
 | `.t <args>` | Text / photo flood bypass |
-| `.logs [chat_id]` | Chat logging to Saved Messages |
+| `.logs [chat_id]` | Chat logging |
 | `.timer <args>` | Activity monitor |
-| `.watch <args>` | Message watcher |
 | `.mute [*]` | Local mute |
 | `.pic [*]` | Media for .help / .uptime |
 | `.upl` | Upload media to x0.at |
@@ -33,7 +32,7 @@ Download binary from [Releases](../../releases).
 | `.clear <chat_id>` | Delete all tasks in chat |
 | `.kill` | Stop all tasks & clear data (confirmation required) |
 | `.kal` | Toggle scheduled messages |
-| `.renew` | Manually recreate festival bot token |
+| `.filter` | Toggle SA content filter |
 
 ---
 
@@ -43,22 +42,17 @@ Download binary from [Releases](../../releases).
 |---|---|---|
 | `TELEGRAM_API_ID` | ✅ | API ID from my.telegram.org |
 | `TELEGRAM_API_HASH` | ✅ | API Hash from my.telegram.org |
-| `SESSIONS` | ✅ | Session names comma-separated (e.g. `MAIN`) |
-| `PHONE_<NAME>` | ✅ | Phone number per session (e.g. `PHONE_MAIN=+79001234567`) |
+| `SESSIONS` | ✅ | Phone numbers comma-separated (e.g. `+79001234567`) |
 | `DATABASE_URL` | ✅ | SQLite path (e.g. `sqlite:data/harvest.db`) |
-| `REDIS_URL` | ❌ | Redis URL (for .timer) |
 | `RECONNECT_BASE_SECS` | ❌ | Base reconnect delay in seconds (default: `3`) |
 | `RECONNECT_MAX_SECS` | ❌ | Max reconnect delay in seconds (default: `60`) |
 | `HEALTHCHECK_SECS` | ❌ | Connection check interval in seconds (default: `30`) |
 | `USER_TEMPLATES_DIR` | ❌ | Directory for .txt templates (default: `data/user_templates`) |
+| `BLOODLOGS_TOKEN` | ❌ | bloodLogs bot token — enables redirect to bloodlogs |
+| `BLOODLOGS_CHANNEL_ID` | ❌ | Log channel ID for `.logs` redirect |
 | `FESTIVAL_BOT_USERNAME` | ❌ | `@username` of festival bot — enables token watchdog |
-| `FESTIVAL_BOT_DISPLAY_NAME` | ❌ | Display name for recreated bot (default: `BloodFestival`) |
-| `FESTIVAL_BOT_USERNAME_PREFIX` | ❌ | Username prefix (default: `bfest`) → `bfest_<ts><rnd>bot` |
-| `FESTIVAL_ENV_PATH` | ❌ | Path to festival bot .env (default: `/opt/bloodfestival/.env`) |
-| `FESTIVAL_DB_PATH` | ❌ | Path to festival bot SQLite (default: `/opt/bloodfestival/data.db`) |
+| `FESTIVAL_ENV_PATH` | ❌ | Path to festival bot .env |
 | `FESTIVAL_SERVICE` | ❌ | systemd service name (default: `blood-festival-bot`) |
-| `FESTIVAL_TOKEN_CHECK_SECS` | ❌ | Token check interval in seconds (default: `15`) |
-| `HARVEST_ENV_PATH` | ❌ | Path to this bot's .env (default: `/opt/bloodharvest/.env`) |
 
 ---
 
@@ -76,18 +70,55 @@ chmod +x blood-harvest
 ```env
 TELEGRAM_API_ID=12345678
 TELEGRAM_API_HASH=abcdef1234567890abcdef1234567890
-SESSIONS=MAIN
-PHONE_MAIN=+79001234567
+SESSIONS=+79001234567
 DATABASE_URL=sqlite:data/harvest.db
 ```
 
-**3. Run**
+**3. Authorize session**
+
+```bash
+./blood-harvest --auth +79001234567
+```
+
+Enter Telegram code, 2FA password if needed. Session saved to `sessions/`.
+
+**4. Run**
 
 ```bash
 ./blood-harvest
 ```
 
-On first launch enter your phone number and the Telegram code — session is saved to a file.
+---
+
+## Redirect logs and timers to bloodLogs
+
+`.logs` and `.timer` notifications can be sent via [bloodLogs bot](https://github.com/bloodF3st/bloodlogs-bot) instead of Saved Messages.
+
+Add to `.env`:
+
+```env
+BLOODLOGS_TOKEN=<bloodlogs bot token from BotFather>
+BLOODLOGS_CHANNEL_ID=<log channel chat_id>
+```
+
+| Variable | Description |
+|---|---|
+| `BLOODLOGS_TOKEN` | Token of your bloodLogs bot |
+| `BLOODLOGS_CHANNEL_ID` | Same channel configured via `/bchannel` in bloodLogs |
+
+After adding — restart blood-harvest.
+
+**What changes:**
+- **`.logs`** — messages from monitored chats go to the bloodLogs channel in unified format
+- **`.timer`** — inactivity alerts arrive in your DM from bloodLogs bot:
+  ```
+  ᴛɪᴍᴇʀ #5: Name 123456789 | Chat -1001234567890 | ɪɴᴀᴄᴛɪᴠᴇ ≥ 2h (ᴛʜʀᴇsʜᴏʟᴅ 1h).
+  ʟᴀsᴛ: 2026-05-26 19:42 MSK
+  ```
+
+Without these variables — behaviour unchanged (everything goes to Saved Messages).
+
+Both bots work independently. If bloodLogs is unavailable — blood-harvest logs the error and continues.
 
 ---
 
