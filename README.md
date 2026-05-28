@@ -31,7 +31,7 @@ Download binary from [Releases](../../releases).
 | `.dd <N>` | Delete N own messages in chat |
 | `.clear <chat_id>` | Delete all tasks in chat |
 | `.kill` | Stop all tasks & clear data (confirmation required) |
-| `.kal` | Toggle scheduled messages |
+| `.kld <args>` | Scheduled message calendar |
 | `.filter` | Toggle SA content filter |
 
 ---
