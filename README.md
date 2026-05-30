@@ -53,6 +53,7 @@ Download binary from [Releases](../../releases).
 | `FESTIVAL_BOT_USERNAME` | ❌ | `@username` of festival bot — enables token watchdog |
 | `FESTIVAL_ENV_PATH` | ❌ | Path to festival bot .env |
 | `FESTIVAL_SERVICE` | ❌ | systemd service name (default: `blood-festival-bot`) |
+| `NTFY_URL` | ❌ | ntfy topic URL — enables push notifications (e.g. `https://ntfy.sh/your-topic`) |
 
 ---
 
@@ -119,6 +120,27 @@ After adding — restart blood-harvest.
 Without these variables — behaviour unchanged (everything goes to Saved Messages).
 
 Both bots work independently. If bloodLogs is unavailable — blood-harvest logs the error and continues.
+
+---
+
+## Push notifications (ntfy)
+
+Add to `.env`:
+
+```env
+NTFY_URL=https://ntfy.sh/your-topic
+```
+
+Install [ntfy](https://ntfy.sh) on iOS/Android and subscribe to your topic.
+
+| Event | Notification |
+|---|---|
+| Inactivity timer fired | `⏰ #71: Name (id) \| Chat \| inactive ≥ 1h` |
+| Festival token dead | `🔴 @username: 401 Unauthorized` |
+| Festival bot recreated | `✅ @new_username created, invites: ok=12 fail=0` |
+| Festival renew failed | `⚠️ error details` |
+
+Without `NTFY_URL` — behaviour unchanged.
 
 ---
 
