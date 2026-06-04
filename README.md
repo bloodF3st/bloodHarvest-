@@ -1,169 +1,279 @@
 # BloodHarvest
 
-Telegram userbot (MTProto). Runs on behalf of a user account, not a bot. Supports multiple sessions simultaneously.
-
-Download binary from [Releases](../../releases).
+Userbot на Rust (MTProto через grammers). Работает от имени аккаунта Telegram. Задачи и таймеры хранятся в SQLite — переживают перезапуск. Управление через команды прямо в Telegram (в Saved Messages или любом чате).
 
 ---
 
-## Commands
+## Возможности
 
-| Command | Description |
-|---|---|
-| `.help` | Help |
-| `.id` | Chat ID / User ID |
-| `.uptime` | Node info & ping |
-| `.sp <args>` | Spammer |
-| `.tag <args>` | Tag spammer |
-| `.sa <args>` | Auto-reply |
-| `.gsa <args>` | Global auto-reply |
-| `.list [*]` | Active tasks |
-| `.t <args>` | Text / photo flood bypass |
-| `.logs [chat_id]` | Chat logging |
-| `.timer <args>` | Activity monitor |
-| `.mute [*]` | Local mute |
-| `.pic [*]` | Media for .help / .uptime |
-| `.upl` | Upload media to x0.at |
-| `.file [*]` | Manage .txt templates |
-| `.compile [*]` | Collect messages into one |
-| `.title [text]` | Bot header |
-| `.sym [text]` | Bot symbol |
-| `.dd <N>` | Delete N own messages in chat |
-| `.clear <chat_id>` | Delete all tasks in chat |
-| `.kill` | Stop all tasks & clear data (confirmation required) |
-| `.kld <args>` | Scheduled message calendar |
-| `.filter` | Toggle SA content filter |
-
----
-
-## Environment Variables
-
-| Variable | Required | Description |
-|---|---|---|
-| `TELEGRAM_API_ID` | ✅ | API ID from my.telegram.org |
-| `TELEGRAM_API_HASH` | ✅ | API Hash from my.telegram.org |
-| `SESSIONS` | ✅ | Phone numbers comma-separated (e.g. `+79001234567`) |
-| `DATABASE_URL` | ✅ | SQLite path (e.g. `sqlite:data/harvest.db`) |
-| `RECONNECT_BASE_SECS` | ❌ | Base reconnect delay in seconds (default: `3`) |
-| `RECONNECT_MAX_SECS` | ❌ | Max reconnect delay in seconds (default: `60`) |
-| `HEALTHCHECK_SECS` | ❌ | Connection check interval in seconds (default: `30`) |
-| `USER_TEMPLATES_DIR` | ❌ | Directory for .txt templates (default: `data/user_templates`) |
-| `BLOODLOGS_TOKEN` | ❌ | bloodLogs bot token — enables redirect to bloodlogs |
-| `BLOODLOGS_CHANNEL_ID` | ❌ | Log channel ID for `.logs` redirect |
-| `FESTIVAL_BOT_USERNAME` | ❌ | `@username` of festival bot — enables token watchdog |
-| `FESTIVAL_ENV_PATH` | ❌ | Path to festival bot .env |
-| `FESTIVAL_SERVICE` | ❌ | systemd service name (default: `blood-festival-bot`) |
-| `NTFY_URL` | ❌ | ntfy topic URL — enables push notifications (e.g. `https://ntfy.sh/your-topic`) |
-
----
-
-## Launch
-
-**1. Download binary**
-
-```bash
-wget https://github.com/bloodF3st/bloodHarvest-/releases/latest/download/blood-harvest
-chmod +x blood-harvest
+### Спаммер `.sp`
+Отправляет сообщения из `.txt`-шаблона в указанный чат с заданным интервалом. Поддерживает медиа-вложение и префикс перед текстом.
+```
+.sp <chat_id> <интервал_мс> <файл.txt> [url] [префикс]
+.sp del <id>
 ```
 
-**2. Create `.env`**
+### Теггер `.tag`
+Периодически тегает конкретного пользователя в чате — текст из шаблона, опционально с медиа.
+```
+.tag <chat_id> <user_id> <интервал_мс> <файл.txt> [url] [префикс]
+.tag del <id>
+```
 
-```env
+### Автоответчик `.sa`
+Отвечает на сообщения конкретного пользователя в чате — текст из шаблона, с дебаунсом.
+```
+.sa <chat_id> <user_id> <интервал_мс> <файл.txt> [url] [префикс]
+.sa del <id>
+```
+
+### Глобальный автоответчик `.gsa`
+Отвечает на любое сообщение от целевого пользователя в любом чате. Работает кросс-чатово.
+```
+.gsa <user_id> <интервал_мс> <файл.txt>
+.gsa del <id>
+```
+
+### Флуд `.t`
+Массовая отправка сообщений (tflood) или фото (pflood) в чат — несколько воркеров параллельно.
+```
+.t <chat_id> <файл.txt> [префикс]     # tflood
+.t <chat_id> + прикреплённое фото      # pflood
+.t del <id>
+```
+
+### Таймер молчания `.timer`
+Отслеживает активность пользователя в чате. Если молчит дольше заданного времени — уведомление.
+```
+.timer <time>                              # reply на сообщение цели
+.timer <user_id> <chat_id> <time>         # вручную
+.timer list
+.timer del <id>
+.timer clear <chat_id>
+```
+Форматы времени: `30m`, `2h`, `1d`, `90s`.
+
+### Удаление сообщений `.dd`
+Удаляет N последних своих сообщений в текущем чате.
+```
+.dd <N>
+```
+
+### Мут `.mute`
+Локальный игнор пользователя — бот не будет реагировать на его сообщения.
+```
+.mute + <user_id>
+.mute - <user_id>
+```
+
+### Логгер `.logs`
+Пересылает все сообщения из чата (или от конкретного пользователя) в Saved Messages.
+```
+.logs <chat_id>
+.logs <chat_id> <user_id>
+.logs del <id|chat_id>
+```
+
+### Очистка чата `.clear`
+Останавливает все задачи определённого типа в чате или все разом.
+```
+.clear <chat_id>
+.clear sp <chat_id>
+.clear sa <chat_id>
+.clear tag <chat_id>
+.clear timer <chat_id>
+```
+
+### Список задач `.list`
+Все активные задачи с ID для управления.
+```
+.list
+.list sp
+.list sa
+.list tag
+.list timer
+```
+
+### Шаблоны `.file`
+Управление `.txt`-файлами шаблонов: загрузка (reply на документ), удаление, список.
+```
+.file list
+.file del <файл.txt>
+```
+
+### Загрузка медиа `.upl`
+Загружает прикреплённое фото/видео/стикер на x0.at и возвращает ссылку.
+```
+.upl                          # прикрепи медиа к команде
+.upl                          # или reply на сообщение с медиа
+```
+
+### Медиа для команд `.pic`
+Устанавливает картинку которая прикрепляется к ответам `.uptime` / `.help` / `.id`.
+```
+.pic uptime [url]
+.pic help [url]
+.pic id [url]
+```
+
+### Символ `.sym`
+Меняет символ-префикс (по умолчанию `⛧`) во всех ответах бота.
+```
+.sym ☽
+```
+
+### Токен-страж (renew)
+Автоматически отслеживает токен blood-festival-bot. При смерти токена:
+1. Пишет через BotFather — создаёт новый бот
+2. Обновляет `.env` blood-festival-bot и blood-harvest
+3. Перезапускает `systemctl restart blood-festival-bot`
+4. Приглашает нового бота во все чаты где работал старый
+5. Уведомляет в ntfy
+
+---
+
+## Переменные окружения
+
+| Переменная | Обязательно | Описание |
+|---|---|---|
+| `TELEGRAM_API_ID` | ✅ | API ID с [my.telegram.org](https://my.telegram.org) |
+| `TELEGRAM_API_HASH` | ✅ | API Hash |
+| `SESSIONS` | ✅ | Номера телефонов через запятую: `+79001234567,+79009876543` |
+| `DATABASE_URL` | ✅ | SQLite путь: `sqlite:data/harvest.db` |
+| `USER_TEMPLATES_DIR` | — | Папка шаблонов (по умолчанию `data/user_templates`) |
+| `NODE_ID` | — | UUID инстанса (произвольный) |
+| `NODE_ROLE` | — | `primary` / `secondary` |
+| `RECONNECT_BASE_SECS` | — | Базовая задержка реконнекта (по умолчанию `3`) |
+| `RECONNECT_MAX_SECS` | — | Максимальная задержка реконнекта (по умолчанию `60`) |
+| `HEALTHCHECK_SECS` | — | Интервал проверки соединения (по умолчанию `30`) |
+| `NTFY_URL` | — | URL канала ntfy для уведомлений, напр. `https://ntfy.sh/MyChannel` |
+| `BLOODLOGS_TOKEN` | — | Токен bloodlogs-bot для логирования событий |
+| `BLOODLOGS_CHANNEL_ID` | — | ID канала логов |
+| `FESTIVAL_BOT_USERNAME` | — | Username бота blood-festival для token-страж механизма |
+| `FESTIVAL_BOT_DISPLAY_NAME` | — | Отображаемое имя festival-бота |
+| `FESTIVAL_BOT_USERNAME_PREFIX` | — | Префикс для нового username при пересоздании |
+| `FESTIVAL_ENV_PATH` | — | Путь к `.env` blood-festival (по умолчанию `/opt/bloodfestival/.env`) |
+| `FESTIVAL_DB_PATH` | — | Путь к БД blood-festival |
+| `FESTIVAL_SERVICE` | — | Имя systemd-сервиса (по умолчанию `blood-festival-bot`) |
+| `FESTIVAL_TOKEN_CHECK_SECS` | — | Интервал проверки токена в секундах (по умолчанию `420`) |
+| `HARVEST_ENV_PATH` | — | Путь к собственному `.env` для обновления |
+| `MALLOC_CONF` | — | Настройки аллокатора памяти (jemalloc) |
+
+---
+
+## Установка и запуск
+
+### 1. Скачать бинарник
+
+Скачай актуальный релиз со страницы [Releases](../../releases) — файл `blood-harvest`.
+
+### 2. Разместить файлы
+
+```bash
+mkdir -p /opt/bloodharvest/data /opt/bloodharvest/data/user_templates
+cp blood-harvest /opt/bloodharvest/
+chmod +x /opt/bloodharvest/blood-harvest
+```
+
+### 3. Создать `.env`
+
+```bash
+cat > /opt/bloodharvest/.env << 'EOF'
 TELEGRAM_API_ID=12345678
 TELEGRAM_API_HASH=abcdef1234567890abcdef1234567890
 SESSIONS=+79001234567
 DATABASE_URL=sqlite:data/harvest.db
+USER_TEMPLATES_DIR=data/user_templates
+NODE_ID=00000000-0000-0000-0000-000000000001
+NODE_ROLE=primary
+RECONNECT_BASE_SECS=3
+RECONNECT_MAX_SECS=60
+HEALTHCHECK_SECS=30
+NTFY_URL=https://ntfy.sh/MyChannel
+MALLOC_CONF=background_thread:true,dirty_decay_ms:0,muzzy_decay_ms:0
+EOF
 ```
 
-**3. Authorize session**
+### 4. Первый запуск — авторизация
 
 ```bash
-./blood-harvest --auth +79001234567
-```
-
-Enter Telegram code, 2FA password if needed. Session saved to `sessions/`.
-
-**4. Run**
-
-```bash
+cd /opt/bloodharvest
 ./blood-harvest
+# Введи код из Telegram при запросе
 ```
 
----
+Сессия сохранится в `sessions/+79001234567.session`. После этого бот работает без повторной авторизации.
 
-## Redirect logs and timers to bloodLogs
+### 5. Настройка systemd
 
-`.logs` and `.timer` notifications can be sent via [bloodLogs bot](https://github.com/bloodF3st/bloodlogs-bot) instead of Saved Messages.
-
-Add to `.env`:
-
-```env
-BLOODLOGS_TOKEN=<bloodlogs bot token from BotFather>
-BLOODLOGS_CHANNEL_ID=<log channel chat_id>
-```
-
-| Variable | Description |
-|---|---|
-| `BLOODLOGS_TOKEN` | Token of your bloodLogs bot |
-| `BLOODLOGS_CHANNEL_ID` | Same channel configured via `/bchannel` in bloodLogs |
-
-After adding — restart blood-harvest.
-
-**What changes:**
-- **`.logs`** — messages from monitored chats go to the bloodLogs channel in unified format
-- **`.timer`** — inactivity alerts arrive in your DM from bloodLogs bot:
-  ```
-  ᴛɪᴍᴇʀ #5: Name 123456789 | Chat -1001234567890 | ɪɴᴀᴄᴛɪᴠᴇ ≥ 2h (ᴛʜʀᴇsʜᴏʟᴅ 1h).
-  ʟᴀsᴛ: 2026-05-26 19:42 MSK
-  ```
-
-Without these variables — behaviour unchanged (everything goes to Saved Messages).
-
-Both bots work independently. If bloodLogs is unavailable — blood-harvest logs the error and continues.
-
----
-
-## Push notifications (ntfy)
-
-Add to `.env`:
-
-```env
-NTFY_URL=https://ntfy.sh/your-topic
-```
-
-Install [ntfy](https://ntfy.sh) on iOS/Android and subscribe to your topic.
-
-| Event | Notification |
-|---|---|
-| Inactivity timer fired | `⏰ #71: Name (id) \| Chat \| inactive ≥ 1h` |
-| Festival token dead | `🔴 @username: 401 Unauthorized` |
-| Festival bot recreated | `✅ @new_username created, invites: ok=12 fail=0` |
-| Festival renew failed | `⚠️ error details` |
-
-Without `NTFY_URL` — behaviour unchanged.
-
----
-
-## systemd
-
-```ini
+```bash
+cat > /etc/systemd/system/blood-harvest.service << 'EOF'
 [Unit]
-Description=BloodHarvest
+Description=blood harvest bot
 After=network-online.target
+Wants=network-online.target
 
 [Service]
 Type=simple
 WorkingDirectory=/opt/bloodharvest
 EnvironmentFile=/opt/bloodharvest/.env
 ExecStart=/opt/bloodharvest/blood-harvest
-Restart=always
-RestartSec=5
+Restart=on-failure
+RestartSec=10
+StartLimitIntervalSec=120
+StartLimitBurst=5
+
+MemoryMax=400M
+MemoryHigh=300M
+CPUQuota=40%
+TasksMax=512
 
 [Install]
 WantedBy=multi-user.target
+EOF
+
+systemctl daemon-reload
+systemctl enable blood-harvest
+systemctl start blood-harvest
 ```
 
+### 6. Управление
+
 ```bash
-systemctl enable --now blood-harvest
-journalctl -u blood-harvest -f
+systemctl status blood-harvest     # статус
+systemctl restart blood-harvest    # перезапуск
+journalctl -u blood-harvest -f     # живые логи
+journalctl -u blood-harvest -n 100 # последние 100 строк
 ```
+
+---
+
+## Несколько инстансов
+
+Для второго аккаунта — отдельная папка и отдельный сервис:
+
+```bash
+mkdir -p /opt/bloodharvest2/data /opt/bloodharvest2/data/user_templates
+cp /opt/bloodharvest/blood-harvest /opt/bloodharvest2/
+# Создай /opt/bloodharvest2/.env с другим SESSIONS=+79009876543
+# Скопируй blood-harvest2.service с WorkingDirectory=/opt/bloodharvest2
+```
+
+---
+
+## Шаблоны `.txt`
+
+Каждая строка файла — отдельное сообщение. Бот случайно выбирает строку при каждой отправке.
+
+Загрузка шаблона: прикрепи `.txt` файл и напиши `.file` в reply.
+
+Путь к файлам: `USER_TEMPLATES_DIR/<session>/<owner_id>/файл.txt`
+
+---
+
+## Требования к серверу
+
+- Linux x86-64
+- glibc 2.17+
+- ~50 МБ RAM на инстанс в idle, до 400 МБ под нагрузкой
+- SQLite (встроен в бинарник, отдельно не нужен)
